@@ -76,15 +76,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "YEN. — Company OS for solo founders" },
+      { name: "description", content: "YEN. is an all-in-one company OS: tasks, projects, deals, cashflow, invoices and ideas for solo founders and small teams." },
+      { property: "og:title", content: "YEN. — Company OS" },
+      { property: "og:description", content: "All-in-one company OS: tasks, projects, deals, cashflow, invoices and ideas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
