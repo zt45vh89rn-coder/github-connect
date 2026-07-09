@@ -7,6 +7,21 @@ const SURL = import.meta.env.VITE_SUPABASE_URL;
 const SKEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 let USER_ID = "default_user";
 let SBTOKEN = SKEY;
+const AUTH_TIMEOUT_MS = 15000;
+
+const withAuthTimeout = async (promise, message = "認証サーバーから応答がありません。公開URLで再度お試しください。") => {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(message)), AUTH_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
+};
 
 const sbReq = async (method, table, body = null, query = "") => {
   try {
@@ -2115,7 +2130,7 @@ export default function App() {
   const [resetPwConf, setResetPwConf] = useState("");
 
   const getAuthRedirectUrl = () => {
-    const publishedUrl = "https://yen-secure-connect.lovable.app";
+    const publishedUrl = "https://merge-magic-link.lovable.app";
     if (typeof window === "undefined") return publishedUrl;
     const origin = window.location.origin;
     return origin.includes("localhost") || origin.includes("127.0.0.1") ? publishedUrl : origin;
@@ -2178,21 +2193,30 @@ export default function App() {
     setAuthLoading(true);
     try {
       if (authMode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email: authEmail, password: authPw,
-          options: { emailRedirectTo: getAuthRedirectUrl() },
-        });
+        const { data, error } = await withAuthTimeout(
+          supabase.auth.signUp({
+            email: authEmail, password: authPw,
+            options: { emailRedirectTo: getAuthRedirectUrl() },
+          }),
+        );
         if (error) throw error;
+        if (data.session) applySession(data.session);
         if (!data.session) setAuthInfo("確認メールを送信しました。メールのリンクから認証してください。");
       } else if (authMode === "forgot") {
-        const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
-          redirectTo: `${getAuthRedirectUrl()}?reset-password=1`,
-        });
+        const { error } = await withAuthTimeout(
+          supabase.auth.resetPasswordForEmail(authEmail, {
+            redirectTo: `${getAuthRedirectUrl()}?reset-password=1`,
+          }),
+        );
         if (error) throw error;
         setAuthInfo("パスワードリセット用のメールを送信しました。メールをご確認ください。");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPw });
+        const { data, error } = await withAuthTimeout(
+          supabase.auth.signInWithPassword({ email: authEmail, password: authPw }),
+          "認証サーバーから応答がありません。プレビューで止まる場合は公開URLでログインしてください。",
+        );
         if (error) throw error;
+        if (data.session) applySession(data.session);
       }
     } catch (e) {
       setAuthErr(e?.message || "認証に失敗しました");
@@ -2352,8 +2376,15 @@ export default function App() {
               setAuthErr("");setAuthInfo("");setAuthLoading(true);
               try{
                 const { lovable } = await import("@/integrations/lovable");
-                const result = await lovable.auth.signInWithOAuth("google",{ redirect_uri: window.location.origin });
+                const result = await withAuthTimeout(
+                  lovable.auth.signInWithOAuth("google",{ redirect_uri: window.location.origin }),
+                  "Googleログインの応答がありません。プレビューで止まる場合は公開URLでログインしてください。",
+                );
                 if(result.error){ setAuthErr(result.error.message||"Googleログインに失敗しました"); }
+                if(!result.redirected){
+                  const { data } = await supabase.auth.getSession();
+                  applySession(data.session);
+                }
               }catch(err:any){ setAuthErr(err?.message||"Googleログインに失敗しました"); }
               finally{ setAuthLoading(false); }
             }} style={{width:"100%",padding:"14px",borderRadius:10,border:`1px solid ${C.bd}`,background:"#fff",color:C.t1,fontSize:14,fontWeight:600,cursor:authLoading?"default":"pointer",marginBottom:12,opacity:authLoading?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
