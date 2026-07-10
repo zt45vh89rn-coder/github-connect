@@ -2113,7 +2113,7 @@ const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
 // ─────────────────────────────────────────
 export default function App() {
   const [splash,    setSplash]    = useState(true);
-  const [loggedIn,  setLoggedIn]  = useState(false);
+  const [loggedIn,  setLoggedIn]  = useState(true); // ログイン画面を一時的にスキップ（中身完成後に戻す）
   const [authReady, setAuthReady] = useState(false);
   const [tab,       setTab]       = useState("home");
 
