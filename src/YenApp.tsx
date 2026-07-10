@@ -2113,7 +2113,7 @@ const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
 // ─────────────────────────────────────────
 export default function App() {
   const [splash,    setSplash]    = useState(true);
-  const [loggedIn,  setLoggedIn]  = useState(false);
+  const [loggedIn,  setLoggedIn]  = useState(true); // ログイン画面を一時的にスキップ（中身完成後に戻す）
   const [authReady, setAuthReady] = useState(false);
   const [tab,       setTab]       = useState("home");
 
@@ -2144,7 +2144,7 @@ export default function App() {
     } else {
       USER_ID = "default_user";
       SBTOKEN = SKEY;
-      setLoggedIn(false);
+      // ログイン画面を一時的に無効化中：setLoggedIn(false) は呼ばない
     }
   };
 
