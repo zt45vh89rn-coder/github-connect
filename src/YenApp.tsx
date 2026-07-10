@@ -2144,7 +2144,7 @@ export default function App() {
     } else {
       USER_ID = "default_user";
       SBTOKEN = SKEY;
-      setLoggedIn(false);
+      // ログイン画面を一時的に無効化中：setLoggedIn(false) は呼ばない
     }
   };
 
