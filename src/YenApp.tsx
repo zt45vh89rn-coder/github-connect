@@ -510,8 +510,8 @@ const HomeTab = ({
     return (
       <div style={{padding:16}}>
         <div style={{...card,padding:"13px 16px",marginBottom:14,display:"flex",justifyContent:"space-between"}}>
-          <div><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>パイプライン期待値</div><div style={{fontSize:22,fontWeight:700,color:C.gr,fontFamily:M}}>+{fmtK(pipeline)}</div></div>
-          <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>案件数</div><div style={{fontSize:22,fontWeight:700,color:C.t1,fontFamily:M}}>{deals.length}件</div></div>
+          <div><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>PIPELINE 期待値</div><div style={{fontSize:22,fontWeight:700,color:C.gr,fontFamily:M}}>+{fmtK(pipeline)}</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>ACTIVE DEALS</div><div style={{fontSize:22,fontWeight:700,color:C.t1,fontFamily:M}}>{deals.length}件</div></div>
         </div>
         <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto"}}>
           {[{id:"all",l:"すべて"},...["リード","提案中","商談","見積","クローズ"].map(s=>({id:s,l:s}))].map(x=>(
@@ -556,11 +556,11 @@ const HomeTab = ({
     return (
       <div style={{padding:16}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-          <div style={{...card,padding:14,borderColor:C.gr+"40"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:6,textTransform:"uppercase"}}>収入合計</div><div style={{fontSize:20,fontWeight:700,color:C.gr,fontFamily:M}}>+{fmtK(totalRev)}</div></div>
-          <div style={{...card,padding:14,borderColor:C.re+"40"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:6,textTransform:"uppercase"}}>支出合計</div><div style={{fontSize:20,fontWeight:700,color:C.re,fontFamily:M}}>-{fmtK(totalExp)}</div></div>
+          <div style={{...card,padding:14,borderColor:C.gr+"40"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:6,textTransform:"uppercase"}}>REVENUE</div><div style={{fontSize:20,fontWeight:700,color:C.gr,fontFamily:M}}>+{fmtK(totalRev)}</div></div>
+          <div style={{...card,padding:14,borderColor:C.re+"40"}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:6,textTransform:"uppercase"}}>BURN</div><div style={{fontSize:20,fontWeight:700,color:C.re,fontFamily:M}}>-{fmtK(totalExp)}</div></div>
         </div>
         <div style={{...card,padding:"13px 16px",marginBottom:14,borderColor:(totalRev-totalExp)>=0?C.gr+"40":C.re+"40"}}>
-          <div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:4,textTransform:"uppercase"}}>純利益</div>
+          <div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:4,textTransform:"uppercase"}}>NET</div>
           <div style={{fontSize:24,fontWeight:700,color:(totalRev-totalExp)>=0?C.gr:C.re,fontFamily:M}}>{(totalRev-totalExp)>=0?"+":""}{fmtK(totalRev-totalExp)}</div>
         </div>
         <div style={{display:"flex",gap:6,marginBottom:14}}>
@@ -605,7 +605,7 @@ const HomeTab = ({
     return (
       <div style={{padding:16}}>
         <div style={{...card,padding:14,marginBottom:12}}>
-          <div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:4,textTransform:"uppercase"}}>収支予測</div>
+          <div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:4,textTransform:"uppercase"}}>RUNWAY 予測</div>
           <div style={{fontSize:28,fontWeight:700,color:balance>=0?C.gr:C.re,fontFamily:M,marginBottom:12}}>{balance>=0?"+":""}{fmtK(balance)}</div>
           <div style={{display:"flex"}}>
             <div style={{flex:1,paddingRight:16}}><div style={{fontSize:9,color:C.t3,letterSpacing:1.5,marginBottom:4,textTransform:"uppercase"}}>入金予定</div><div style={{fontSize:16,fontWeight:700,color:C.gr,fontFamily:M}}>+{fmtK(totalIn)}</div></div>
