@@ -285,14 +285,14 @@ const HomeTab = ({
 
 
   const SUBTABS = [
-    {id:"hub",l:"ダッシュ"},
-    {id:"tasks",l:`ToDo${tasks.filter(t=>!t.done).length>0?`(${tasks.filter(t=>!t.done).length})`:""}`},
-    {id:"projects",l:"プロジェクト"},
-    {id:"crm",l:"商談"},
-    {id:"invoice",l:"インボイス"},
-    {id:"finance",l:"売上・支出"},
-    {id:"cashflow",l:"資金繰り"},
-    {id:"schedule",l:"スケジュール"},
+    {id:"hub",l:"ホーム"},
+    {id:"tasks",l:`実行${tasks.filter(t=>!t.done).length>0?`(${tasks.filter(t=>!t.done).length})`:""}`},
+    {id:"projects",l:"プロダクト"},
+    {id:"crm",l:"パイプ"},
+    {id:"invoice",l:"請求"},
+    {id:"finance",l:"PL"},
+    {id:"cashflow",l:"キャッシュ"},
+    {id:"schedule",l:"予定"},
     {id:"memos",l:"アイデア"},
   ];
 
