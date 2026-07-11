@@ -963,8 +963,8 @@ const HomeTab = ({
       <div style={{padding:"14px 18px 0",background:C.bs,borderBottom:`1px solid ${C.bd}`,position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <div>
-            <div style={{fontSize:15,fontWeight:700,color:C.t1}}>{uname||"Player"}</div>
-            {genre&&<div style={{fontSize:11,color:C.t2,marginTop:2}}>{genre} · 代表</div>}
+            <div style={{fontSize:15,fontWeight:800,color:C.t1}}>{uname||"Founder"}</div>
+            <div style={{fontSize:11,color:C.t2,marginTop:2,fontFamily:M,fontWeight:700}}>{companyName||"stealth"}{genre?` · ${genre}`:""}</div>
           </div>
           <div>{headerAction[sub]}</div>
         </div>
