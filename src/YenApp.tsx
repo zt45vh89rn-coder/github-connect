@@ -341,105 +341,188 @@ const HomeTab = ({
       ? Math.max(1, Math.floor((Date.now() - seeds[0]) / 86400000) + 1)
       : 1;
 
+    // ═══ GAME MECHANICS ═══
+    // XP from shipping stuff. Level curve: level = floor(sqrt(xp/40))+1
+    const xp = shippedCount*15 + ideaCount*4 + activeProj*25 + deals.length*20 + Math.floor(totalRev/5000);
+    const level = Math.floor(Math.sqrt(xp/40)) + 1;
+    const xpForLevel = (lv) => 40 * (lv-1) * (lv-1);
+    const xpCur = xp - xpForLevel(level);
+    const xpNeed = xpForLevel(level+1) - xpForLevel(level);
+    const xpPct = Math.min(100, Math.round((xpCur/Math.max(1,xpNeed))*100));
+
+    // Rank tier
+    const ranks = [
+      {min:1, name:"HUSTLER",     tag:"E", c:"#94A3B8", bg:"linear-gradient(135deg,#475569,#1E293B)"},
+      {min:3, name:"BOOTSTRAPPER", tag:"D", c:"#06B6D4", bg:"linear-gradient(135deg,#0891B2,#0E7490)"},
+      {min:6, name:"OPERATOR",    tag:"C", c:"#10B981", bg:"linear-gradient(135deg,#059669,#065F46)"},
+      {min:10,name:"CHALLENGER",  tag:"B", c:"#8B5CF6", bg:"linear-gradient(135deg,#7C3AED,#5B21B6)"},
+      {min:15,name:"DISRUPTOR",   tag:"A", c:"#F59E0B", bg:"linear-gradient(135deg,#F59E0B,#B45309)"},
+      {min:22,name:"UNICORN",     tag:"S", c:"#EC4899", bg:"linear-gradient(135deg,#EC4899,#7C2D63)"},
+    ];
+    const rank = [...ranks].reverse().find(r=>level>=r.min) || ranks[0];
+
+    // Streak — consecutive days with any completed task (approx via task ids as timestamps)
+    const doneTs = tasks.filter(t=>t.done && t.id).map(t=>new Date(t.id).toDateString());
+    const uniqueDays = [...new Set(doneTs)];
+    let streak = 0;
+    const today = new Date();
+    for (let i=0;i<uniqueDays.length+1;i++) {
+      const d = new Date(today); d.setDate(d.getDate()-i);
+      if (uniqueDays.includes(d.toDateString())) streak++; else if (i>0) break;
+    }
+    if (uniqueDays.length===0) streak = 0;
+
+    // Daily quests — generated from current state
+    const todayStr = today.toDateString();
+    const shippedToday = tasks.some(t=>t.done && t.id && new Date(t.id).toDateString()===todayStr);
+    const ideaToday    = memos.some(m=>m.id && new Date(m.id).toDateString()===todayStr);
+    const revToday     = finances.some(f=>f.type==="revenue" && f.id && new Date(f.id).toDateString()===todayStr);
+    const quests = [
+      {done:shippedToday, xp:15, l:"タスクを1つ SHIP する",      icon:"⚡", c:"#F59E0B"},
+      {done:ideaToday,    xp:10, l:"アイデアを1つ 打刻する",     icon:"💡", c:"#8B5CF6"},
+      {done:revToday,     xp:25, l:"売上を1件 記録する",         icon:"💰", c:"#10B981"},
+      {done:streak>=1,    xp:20, l:`連続稼働 ${Math.max(streak,1)}日を継続`, icon:"🔥", c:"#EF4444"},
+    ];
+    const questsDone = quests.filter(q=>q.done).length;
+
+    // Achievements
+    const achievements = [
+      {unlocked:shippedCount>=1,   icon:"🎯", l:"First Ship"},
+      {unlocked:shippedCount>=10,  icon:"🚀", l:"10 Ships"},
+      {unlocked:shippedCount>=50,  icon:"👑", l:"50 Ships"},
+      {unlocked:ideaCount>=5,      icon:"🧠", l:"Idea Machine"},
+      {unlocked:totalRev>=100000,  icon:"💵", l:"First 100k"},
+      {unlocked:totalRev>=1000000, icon:"💎", l:"7-figure"},
+      {unlocked:streak>=3,         icon:"🔥", l:"3-day Streak"},
+      {unlocked:streak>=7,         icon:"⚔️", l:"7-day Warrior"},
+      {unlocked:activeProj>=3,     icon:"🎪", l:"Multi-hustle"},
+      {unlocked:deals.length>=5,   icon:"🤝", l:"Dealmaker"},
+    ];
+    const unlockedCount = achievements.filter(a=>a.unlocked).length;
+
     return (
       <div style={{padding:16}}>
-        {/* Founder hero */}
-        <div className="yen-card" style={{padding:"22px 20px",marginBottom:14,background:"linear-gradient(140deg,#0B1220 0%,#111A32 45%,#2A0F4A 100%)",borderRadius:26,border:"1px solid rgba(148,163,184,0.15)",boxShadow:"0 8px 0 rgba(11,18,32,0.35), 0 20px 40px rgba(11,18,32,0.45)",position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:-40,right:-40,width:170,height:170,borderRadius:"50%",background:"radial-gradient(circle,#F59E0B44,transparent 70%)",pointerEvents:"none"}}/>
-          <div style={{position:"absolute",bottom:-50,left:-30,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,#8B5CF644,transparent 70%)",pointerEvents:"none"}}/>
-          <div style={{position:"relative"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-              <span style={{fontSize:10,color:"#F59E0B",background:"#F59E0B1F",border:"1px solid #F59E0B55",padding:"3px 9px",borderRadius:6,fontWeight:800,letterSpacing:1.5,fontFamily:M}}>● BUILDING</span>
-              <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",fontFamily:M,letterSpacing:1}}>DAY {dayNum}</span>
-              <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontFamily:M}}>· {dateStr}</span>
-            </div>
-            <div style={{fontSize:22,fontWeight:900,color:"#fff",marginBottom:4,letterSpacing:-0.4,lineHeight:1.15}}>{companyName||"Untitled Startup"}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",fontWeight:600,marginBottom:16,fontFamily:M,letterSpacing:0.3}}>{genre||"stealth mode"} · founded by {uname||"you"}</div>
-            {nextMove ? (
-              <div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:14,padding:"11px 13px",display:"flex",alignItems:"center",gap:11}}>
-                <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#F59E0B,#EF4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🎯</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,0.5)",fontWeight:800,letterSpacing:1.5,marginBottom:2,fontFamily:M}}>NEXT MOVE</div>
-                  <div style={{fontSize:13,color:"#fff",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nextMove.text}</div>
+        {/* ═══ PLAYER CARD ═══ */}
+        <div className="yen-card" style={{padding:0,marginBottom:14,background:rank.bg,borderRadius:26,border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 12px 30px rgba(0,0,0,0.35)",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 90% -10%, rgba(255,255,255,0.22), transparent 55%), radial-gradient(circle at -10% 110%, rgba(0,0,0,0.35), transparent 60%)",pointerEvents:"none"}}/>
+          <div style={{position:"relative",padding:"20px 20px 18px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+              <div style={{width:56,height:56,borderRadius:14,background:"rgba(0,0,0,0.35)",border:"2px solid rgba(255,255,255,0.25)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"inset 0 -3px 0 rgba(0,0,0,0.3)"}}>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.65)",fontWeight:800,fontFamily:M,letterSpacing:1,lineHeight:1}}>LV</div>
+                <div style={{fontSize:22,color:"#fff",fontWeight:900,fontFamily:M,lineHeight:1,marginTop:2}}>{level}</div>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                  <span style={{fontSize:10,color:"#fff",background:"rgba(0,0,0,0.4)",padding:"3px 8px",borderRadius:5,fontWeight:900,letterSpacing:1.2,fontFamily:M,border:"1px solid rgba(255,255,255,0.2)"}}>{rank.tag}·{rank.name}</span>
+                  <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontFamily:M,fontWeight:700}}>🔥 {streak}日</span>
                 </div>
-                <button onClick={()=>toggleTask(nextMove.id)} style={{padding:"6px 12px",borderRadius:10,border:"none",background:"linear-gradient(180deg,#F59E0B,#D97706)",color:"#fff",fontSize:11,fontWeight:900,cursor:"pointer",flexShrink:0,letterSpacing:0.5}}>SHIP</button>
+                <div style={{fontSize:17,fontWeight:900,color:"#fff",letterSpacing:-0.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{uname||"Founder"}</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",fontFamily:M,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>@ {companyName||"stealth"} · Day {dayNum}</div>
               </div>
-            ) : (
-              <div style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:14,padding:"11px 13px",display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:20}}>✨</span>
-                <div style={{fontSize:13,color:"#fff",fontWeight:700}}>Inbox zero. 次の一手を仕込もう。</div>
+            </div>
+
+            {/* XP bar */}
+            <div style={{marginBottom:2}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.7)",fontWeight:900,fontFamily:M,letterSpacing:1.5}}>XP</div>
+                <div style={{fontSize:10,color:"#fff",fontWeight:800,fontFamily:M}}>{xpCur} / {xpNeed}</div>
               </div>
-            )}
+              <div style={{height:10,background:"rgba(0,0,0,0.45)",borderRadius:6,overflow:"hidden",border:"1px solid rgba(255,255,255,0.15)",boxShadow:"inset 0 1px 2px rgba(0,0,0,0.4)"}}>
+                <div style={{height:"100%",width:`${xpPct}%`,background:"linear-gradient(90deg,#FCD34D,#F59E0B,#EF4444)",borderRadius:6,transition:"width .8s cubic-bezier(.34,1.56,.64,1)",boxShadow:"0 0 12px rgba(245,158,11,0.7)"}}/>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Monthly goal */}
-        {monthlyGoal>0&&(
-          <div className="yen-card" style={{...card,padding:"16px 18px",marginBottom:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:16}}>🎯</span>
-                <div style={{fontSize:12,color:C.t2,fontWeight:800}}>今月のトラクション</div>
-              </div>
-              <div style={{fontSize:14,fontWeight:900,color:goalPct>=100?C.gr:C.ac,fontFamily:M}}>{goalPct}%</div>
+        {/* ═══ NEXT MOVE (Boss battle) ═══ */}
+        {nextMove && (
+          <div onClick={()=>toggleTask(nextMove.id)} className="yen-card yen-pop" style={{padding:"14px 16px",marginBottom:14,background:"linear-gradient(135deg,#7F1D1D 0%,#450A0A 100%)",borderRadius:20,border:"1px solid rgba(239,68,68,0.4)",boxShadow:"0 8px 20px rgba(239,68,68,0.35)",cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:44,height:44,borderRadius:12,background:"rgba(0,0,0,0.4)",border:"1px solid rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>⚔️</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:9,color:"#FCA5A5",fontWeight:900,letterSpacing:1.5,fontFamily:M,marginBottom:3}}>▸ BOSS · +15 XP</div>
+              <div style={{fontSize:14,color:"#fff",fontWeight:800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nextMove.text}</div>
             </div>
-            <div style={{height:12,background:"#E8EEFF",borderRadius:8,overflow:"hidden",marginBottom:8,boxShadow:"inset 0 2px 4px rgba(59,130,246,0.1)"}}>
-              <div style={{height:"100%",width:`${goalPct}%`,background:goalPct>=100?"linear-gradient(90deg,#10B981,#34D399)":"linear-gradient(90deg,#3B82F6,#8B5CF6)",borderRadius:8,transition:"width .8s cubic-bezier(.34,1.56,.64,1)",boxShadow:goalPct>0?"0 2px 8px rgba(59,130,246,0.4)":"none"}}/>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between"}}>
-              <div style={{fontSize:13,color:C.gr,fontFamily:M,fontWeight:800}}>{fmtK(totalRev)}</div>
-              <div style={{fontSize:12,color:C.t3,fontFamily:M}}>目標 {fmtK(monthlyGoal)}</div>
-            </div>
+            <div style={{padding:"7px 12px",borderRadius:10,background:"linear-gradient(180deg,#EF4444,#B91C1C)",color:"#fff",fontSize:11,fontWeight:900,letterSpacing:1,fontFamily:M,boxShadow:"0 3px 0 rgba(0,0,0,0.3)"}}>SHIP</div>
           </div>
         )}
 
-        {/* Founder KPI grid */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-          {[
-            {l:"MRR / 今月売上",v:fmtK(totalRev),d:`${finances.filter(f=>f.type==="revenue").length} 件のレベニュー`,c:"#10B981",emoji:"📈",bg:"linear-gradient(135deg,#ECFDF5,#D1FAE5)"},
-            {l:"ランウェイ",v:runwayLabel,d:`残高 ${fmtK(Math.max(0,cashBalance))}`,c:runwayColor,emoji:"🛫",bg:"linear-gradient(135deg,#EFF6FF,#DBEAFE)"},
-            {l:"アイデア在庫",v:`${ideaCount}`,d:`${activeProj} プロジェクト稼働中`,c:"#8B5CF6",emoji:"💡",bg:"linear-gradient(135deg,#F5F3FF,#EDE9FE)"},
-            {l:"シップ数",v:`${shippedCount}`,d:`残 ${backlogCount} バックログ`,c:"#F59E0B",emoji:"🔥",bg:"linear-gradient(135deg,#FFFBEB,#FEF3C7)"},
-          ].map((k,i)=>(
-            <div key={i} className="yen-card yen-pop" style={{...card,padding:"16px 14px",background:k.bg,border:`2px solid ${k.c}22`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                <div style={{fontSize:11,color:k.c,fontWeight:800,letterSpacing:0.3}}>{k.l}</div>
-                <span style={{fontSize:18}}>{k.emoji}</span>
-              </div>
-              <div style={{fontSize:22,fontWeight:900,color:k.c,fontFamily:M,marginBottom:4}}>{k.v}</div>
-              <div style={{fontSize:11,color:k.c+"99",fontWeight:700}}>{k.d}</div>
+        {/* ═══ DAILY QUESTS ═══ */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontSize:11,color:C.t2,fontWeight:900,letterSpacing:1.2,fontFamily:M}}>◆ DAILY QUESTS</div>
+          <div style={{fontSize:11,color:C.gr,fontWeight:900,fontFamily:M}}>{questsDone}/{quests.length}</div>
+        </div>
+        <div style={{marginBottom:16}}>
+          {quests.map((q,i)=>(
+            <div key={i} className="yen-card" style={{...card,padding:"10px 13px",marginBottom:7,display:"flex",alignItems:"center",gap:11,borderLeft:`4px solid ${q.done?"#10B981":q.c}`,opacity:q.done?0.6:1}}>
+              <div style={{width:28,height:28,borderRadius:8,background:q.done?"#10B98118":q.c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>{q.done?"✅":q.icon}</div>
+              <div style={{flex:1,fontSize:12,fontWeight:800,color:q.done?C.t3:C.t1,textDecoration:q.done?"line-through":"none"}}>{q.l}</div>
+              <div style={{fontSize:10,fontWeight:900,color:q.done?C.t3:q.c,fontFamily:M,letterSpacing:0.5}}>+{q.xp} XP</div>
             </div>
           ))}
         </div>
 
-        {/* Ship actions */}
-        <div style={{fontSize:12,color:C.t2,fontWeight:800,marginBottom:12,letterSpacing:0.5}}>⚡ SHIP SOMETHING</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
+        {/* ═══ STATS GRID ═══ */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:16}}>
           {[
-            {l:"タスク",icon:"✅",color:"#3B82F6",fn:()=>{setTf({text:"",priority:"medium",assignee:"田",projectId:null,due:"",note:""});setTaskModal("new");}},
-            {l:"アイデア",icon:"💡",color:"#8B5CF6",fn:()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}},
-            {l:"商談",icon:"🤝",color:"#10B981",fn:()=>{setDf({company:"",contact:"",stage:"リード",value:"",due:"",prob:50,note:""});setDealModal("new");}},
-            {l:"プロジェクト",icon:"🚀",color:"#EC4899",fn:()=>{setPf({name:"",status:"進行中",due:"",color:C.ac,desc:""});setProjModal("new");}},
-            {l:"収支",icon:"💹",color:"#F59E0B",fn:()=>setFinModal(true)},
-            {l:"資金繰り",icon:"🏦",color:"#06B6D4",fn:()=>setCfModal(true)},
+            {l:"STREAK",   v:`${streak}d`,   d:"連続稼働",      c:"#EF4444", emoji:"🔥"},
+            {l:"RUNWAY",   v:runwayLabel,     d:fmtK(Math.max(0,cashBalance)), c:runwayColor, emoji:"🛫"},
+            {l:"SHIPS",    v:`${shippedCount}`, d:`残 ${backlogCount}`, c:"#F59E0B", emoji:"🚀"},
+            {l:"REVENUE",  v:fmtK(totalRev),  d:`${deals.length} 商談`, c:"#10B981", emoji:"💰"},
+          ].map((k,i)=>(
+            <div key={i} className="yen-card yen-pop" style={{...card,padding:"13px 12px",background:"linear-gradient(160deg,#fff, "+k.c+"0A)",border:`1.5px solid ${k.c}25`,borderRadius:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <div style={{fontSize:9,color:k.c,fontWeight:900,letterSpacing:1.2,fontFamily:M}}>{k.l}</div>
+                <span style={{fontSize:15}}>{k.emoji}</span>
+              </div>
+              <div style={{fontSize:20,fontWeight:900,color:k.c,fontFamily:M,marginBottom:2,letterSpacing:-0.5}}>{k.v}</div>
+              <div style={{fontSize:10,color:C.t3,fontWeight:700}}>{k.d}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ═══ ACTIONS ═══ */}
+        <div style={{fontSize:11,color:C.t2,fontWeight:900,marginBottom:10,letterSpacing:1.2,fontFamily:M}}>▸ QUICK PLAY</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9,marginBottom:18}}>
+          {[
+            {l:"タスク",   icon:"⚡", xp:"+15", color:"#F59E0B", fn:()=>{setTf({text:"",priority:"medium",assignee:"田",projectId:null,due:"",note:""});setTaskModal("new");}},
+            {l:"アイデア", icon:"💡", xp:"+10", color:"#8B5CF6", fn:()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}},
+            {l:"商談",     icon:"🤝", xp:"+20", color:"#10B981", fn:()=>{setDf({company:"",contact:"",stage:"リード",value:"",due:"",prob:50,note:""});setDealModal("new");}},
+            {l:"プロジェクト",icon:"🚀",xp:"+25",color:"#EC4899", fn:()=>{setPf({name:"",status:"進行中",due:"",color:C.ac,desc:""});setProjModal("new");}},
+            {l:"売上",     icon:"💰", xp:"+30", color:"#3B82F6", fn:()=>setFinModal(true)},
+            {l:"資金繰り", icon:"🏦", xp:"+5",  color:"#06B6D4", fn:()=>setCfModal(true)},
           ].map((a,i)=>(
-            <button key={i} onClick={a.fn} className="yen-card yen-pop yen-btn3d" style={{...card,padding:"16px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:8,borderRadius:22,border:`2px solid ${a.color}22`,background:`linear-gradient(160deg,#fff,${a.color}0A)`}}>
-              <div style={{fontSize:28,filter:`drop-shadow(0 2px 4px ${a.color}44)`}}>{a.icon}</div>
-              <span style={{fontSize:11,color:a.color,fontWeight:800}}>{a.l}</span>
+            <button key={i} onClick={a.fn} className="yen-card yen-pop yen-btn3d" style={{...card,padding:"13px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,borderRadius:18,border:`1.5px solid ${a.color}30`,background:`linear-gradient(160deg,#fff,${a.color}0F)`}}>
+              <div style={{fontSize:24,filter:`drop-shadow(0 2px 4px ${a.color}55)`}}>{a.icon}</div>
+              <span style={{fontSize:10,color:a.color,fontWeight:900,letterSpacing:0.3}}>{a.l}</span>
+              <span style={{fontSize:8,color:a.color+"99",fontWeight:900,fontFamily:M,letterSpacing:0.5}}>{a.xp} XP</span>
             </button>
           ))}
         </div>
 
-        {/* Founder log — latest ideas */}
+        {/* ═══ ACHIEVEMENTS ═══ */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontSize:11,color:C.t2,fontWeight:900,letterSpacing:1.2,fontFamily:M}}>★ TROPHIES</div>
+          <div style={{fontSize:11,color:C.go,fontWeight:900,fontFamily:M}}>{unlockedCount}/{achievements.length}</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:7,marginBottom:16}}>
+          {achievements.map((a,i)=>(
+            <div key={i} className="yen-card" style={{...card,padding:"10px 4px",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderRadius:14,background:a.unlocked?"linear-gradient(160deg,#FFFBEB,#FEF3C7)":"#F1F5F9",border:a.unlocked?"1.5px solid #F59E0B44":"1.5px solid #E2E8F0",opacity:a.unlocked?1:0.45}}>
+              <div style={{fontSize:20,filter:a.unlocked?"none":"grayscale(1)"}}>{a.unlocked?a.icon:"🔒"}</div>
+              <div style={{fontSize:8,fontWeight:900,color:a.unlocked?"#B45309":C.t3,textAlign:"center",lineHeight:1.15,fontFamily:M}}>{a.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Idea log */}
         {memos.length>0 && (
           <>
-            <div style={{fontSize:12,color:C.t2,fontWeight:800,marginBottom:12,letterSpacing:0.5}}>💡 IDEA LOG</div>
+            <div style={{fontSize:11,color:C.t2,fontWeight:900,marginBottom:10,letterSpacing:1.2,fontFamily:M}}>💡 IDEA STASH</div>
             {memos.slice(0,3).map(m=>(
-              <div key={m.id} onClick={()=>{setMf({title:m.title,content:m.content,tag:m.tag});setMemoModal(m);}} className="yen-card" style={{...card,display:"flex",alignItems:"flex-start",gap:12,padding:"12px 14px",marginBottom:8,cursor:"pointer",borderLeft:`4px solid #8B5CF6`}}>
-                <div style={{width:32,height:32,borderRadius:9,background:"#8B5CF614",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>💡</div>
+              <div key={m.id} onClick={()=>{setMf({title:m.title,content:m.content,tag:m.tag});setMemoModal(m);}} className="yen-card" style={{...card,display:"flex",alignItems:"flex-start",gap:12,padding:"11px 13px",marginBottom:7,cursor:"pointer",borderLeft:`4px solid #8B5CF6`}}>
+                <div style={{width:30,height:30,borderRadius:9,background:"#8B5CF614",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>💡</div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:800,color:C.t1,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.title}</div>
-                  {m.content && <div style={{fontSize:11,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.content}</div>}
+                  <div style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.title}</div>
+                  {m.content && <div style={{fontSize:10,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.content}</div>}
                 </div>
               </div>
             ))}
