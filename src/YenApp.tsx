@@ -968,14 +968,10 @@ const HomeTab = ({
       </div>
 
       {sub==="hub"      && renderHub()}
-      {sub==="tasks"    && renderTasks()}
-      {sub==="projects" && renderProjects()}
-      {sub==="crm"      && renderCRM()}
-      {sub==="finance"  && renderFinance()}
       {sub==="cashflow" && renderCashflow()}
-      {sub==="schedule" && renderSchedule()}
       {sub==="memos"    && renderMemos()}
       {sub==="invoice"  && renderInvoice()}
+
 
       <style>{`@keyframes yen_spin{to{transform:rotate(360deg)}}@keyframes yen_pulse{0%,100%{opacity:.3}50%{opacity:1}}`}</style>
     </div>
