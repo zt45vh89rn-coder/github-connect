@@ -286,27 +286,17 @@ const HomeTab = ({
 
   const SUBTABS = [
     {id:"hub",l:"ホーム"},
-    {id:"tasks",l:`実行${tasks.filter(t=>!t.done).length>0?`(${tasks.filter(t=>!t.done).length})`:""}`},
-    {id:"projects",l:"プロダクト"},
-    {id:"crm",l:"パイプ"},
-    {id:"invoice",l:"請求"},
-    {id:"finance",l:"PL"},
-    {id:"cashflow",l:"キャッシュ"},
-    {id:"schedule",l:"予定"},
     {id:"memos",l:"アイデア"},
+    {id:"cashflow",l:"キャッシュ"},
+    {id:"invoice",l:"請求"},
   ];
 
   const headerAction = {
-    tasks:    <Btn onClick={()=>{setTf({text:"",priority:"medium",assignee:"田",projectId:null,due:"",note:""});setTaskModal("new");}}>+ ToDo</Btn>,
-    projects: <Btn onClick={()=>{setPf({name:"",status:"進行中",due:"",color:C.ac,desc:""});setProjModal("new");}}>+ プロジェクト</Btn>,
-    crm:      <Btn onClick={()=>{setDf({company:"",contact:"",stage:"リード",value:"",due:"",prob:50,note:""});setDealModal("new");}}>+ 商談</Btn>,
     invoice:  <Btn onClick={()=>{setIvf({company:"",amount:"",due:"",note:"",status:"未送付"});setInvModal("new");}}>+ インボイス</Btn>,
-    finance:  <Btn onClick={()=>setFinModal(true)}>+ 記録</Btn>,
     cashflow: <Btn onClick={()=>setCfModal(true)}>+ 追加</Btn>,
-    schedule: <Btn onClick={()=>setSchedModal(true)}>+ 予定</Btn>,
     memos:    <Btn onClick={()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}}>+ アイデア</Btn>,
-    
   };
+
 
   // ──────── render functions (NOT components – avoids hook rule issues) ────────
 
