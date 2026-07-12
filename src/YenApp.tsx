@@ -316,59 +316,32 @@ const HomeTab = ({
     const runwayLabel = cashBalance<=0 ? "—" : monthlyBurn<=0 ? "∞" : runwayMonths>=24 ? "24m+" : `${runwayMonths.toFixed(1)}m`;
     const runwayColor = cashBalance<=0 ? C.re : runwayMonths<3 ? C.re : runwayMonths<6 ? C.go : C.gr;
 
-    const shippedCount = tasks.filter(t=>t.done).length;
-    const backlogCount = tasks.filter(t=>!t.done).length;
-    const activeProj   = projects.filter(p=>p.status!=="完了").length;
-    const urgentTasks  = tasks.filter(t=>!t.done&&t.priority==="high");
-    const nextMove     = urgentTasks[0] || tasks.find(t=>!t.done);
-    const expPipeline  = deals.reduce((a,d)=>a+(d.value*(d.prob/100)||0),0);
+    const ideaCount = memos.length;
+    const unpaidCount = invoices.filter(i=>i.status!=="入金済").length;
+    const unpaidAmount = invoices.filter(i=>i.status!=="入金済").reduce((a,b)=>a+(b.amount||0),0);
 
-    const seeds = [...tasks, ...memos, ...projects, ...deals, ...finances, ...cashflow]
+    const seeds = [...memos, ...invoices, ...cashflow, ...finances]
       .map(x=>x.id).filter(Boolean).sort((a,b)=>a-b);
     const dayNum = seeds.length > 0
       ? Math.max(1, Math.floor((Date.now() - seeds[0]) / 86400000) + 1)
       : 1;
 
-    const doneTs = tasks.filter(t=>t.done && t.id).map(t=>new Date(t.id).toDateString());
-    const uniqueDays = [...new Set(doneTs)];
-    let streak = 0;
-    const today = new Date();
-    for (let i=0;i<uniqueDays.length+1;i++) {
-      const d = new Date(today); d.setDate(d.getDate()-i);
-      if (uniqueDays.includes(d.toDateString())) streak++; else if (i>0) break;
-    }
-    if (uniqueDays.length===0) streak = 0;
-
     return (
       <div style={{padding:16}}>
         {/* Founder header */}
         <div style={{marginBottom:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4}}>
-            <div style={{fontSize:10,color:C.t3,fontWeight:800,fontFamily:M,letterSpacing:1.5}}>DAY {dayNum} · {dateStr}</div>
-            <div style={{fontSize:10,color:C.t3,fontFamily:M,fontWeight:700}}>{streak>0?`連続 ${streak}日`:"·"}</div>
-          </div>
+          <div style={{fontSize:10,color:C.t3,fontWeight:800,fontFamily:M,letterSpacing:1.5,marginBottom:4}}>DAY {dayNum} · {dateStr}</div>
           <div style={{fontSize:22,fontWeight:900,color:C.t1,letterSpacing:-0.5,marginBottom:2}}>{uname||"Founder"}</div>
           <div style={{fontSize:12,color:C.t2,fontWeight:700}}>{companyName||"stealth"}{genre?` · ${genre}`:""}</div>
         </div>
 
-        {/* Next move */}
-        {nextMove && (
-          <div onClick={()=>toggleTask(nextMove.id)} style={{...card,padding:"14px 16px",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${C.ac}`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:9,color:C.ac,fontWeight:900,letterSpacing:1.5,fontFamily:M,marginBottom:4}}>NEXT MOVE</div>
-              <div style={{fontSize:14,color:C.t1,fontWeight:800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nextMove.text}</div>
-            </div>
-            <div style={{padding:"7px 14px",borderRadius:9,background:C.ac,color:"#fff",fontSize:11,fontWeight:800,letterSpacing:1,fontFamily:M,flexShrink:0}}>完了</div>
-          </div>
-        )}
-
         {/* Metrics */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
           {[
-            {l:"RUNWAY",   v:runwayLabel,       d:`残高 ${fmtK(Math.max(0,cashBalance))}`, c:runwayColor},
-            {l:"REVENUE",  v:fmtK(totalRev),    d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
-            {l:"PIPELINE", v:fmtK(expPipeline), d:`${deals.length} 案件 期待値`,           c:C.go},
-            {l:"SHIPPED",  v:`${shippedCount}`, d:`残 ${backlogCount} · ${activeProj} PJ`, c:C.ac},
+            {l:"RUNWAY",   v:runwayLabel,             d:`残高 ${fmtK(Math.max(0,cashBalance))}`, c:runwayColor},
+            {l:"REVENUE",  v:fmtK(totalRev),          d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
+            {l:"UNPAID",   v:fmtK(unpaidAmount),      d:`${unpaidCount} 請求 未回収`,            c:C.go},
+            {l:"IDEAS",    v:`${ideaCount}`,          d:`アイデア在庫`,                          c:C.pu},
           ].map((k,i)=>(
             <div key={i} style={{...card,padding:"13px 14px"}}>
               <div style={{fontSize:9,color:C.t3,fontWeight:900,letterSpacing:1.5,fontFamily:M,marginBottom:6}}>{k.l}</div>
@@ -382,12 +355,9 @@ const HomeTab = ({
         <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M}}>CREATE</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
           {[
-            {l:"タスク",     c:C.ac, fn:()=>{setTf({text:"",priority:"medium",assignee:"田",projectId:null,due:"",note:""});setTaskModal("new");}},
             {l:"アイデア",   c:C.pu, fn:()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}},
-            {l:"商談",       c:C.gr, fn:()=>{setDf({company:"",contact:"",stage:"リード",value:"",due:"",prob:50,note:""});setDealModal("new");}},
-            {l:"プロダクト", c:C.pu, fn:()=>{setPf({name:"",status:"進行中",due:"",color:C.ac,desc:""});setProjModal("new");}},
-            {l:"売上",       c:C.gr, fn:()=>setFinModal(true)},
             {l:"資金繰り",   c:C.cy, fn:()=>setCfModal(true)},
+            {l:"請求",       c:C.go, fn:()=>{setIvf({company:"",amount:"",due:"",note:"",status:"未送付"});setInvModal("new");}},
           ].map((a,i)=>(
             <button key={i} onClick={a.fn} style={{...card,padding:"11px 8px",cursor:"pointer",fontSize:11,fontWeight:800,color:a.c,borderLeft:`3px solid ${a.c}`}}>
               + {a.l}
@@ -399,7 +369,7 @@ const HomeTab = ({
         {memos.length>0 && (
           <>
             <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M}}>IDEAS</div>
-            {memos.slice(0,3).map(m=>(
+            {memos.slice(0,5).map(m=>(
               <div key={m.id} onClick={()=>{setMf({title:m.title,content:m.content,tag:m.tag});setMemoModal(m);}} style={{...card,padding:"11px 13px",marginBottom:7,cursor:"pointer",borderLeft:`3px solid ${C.pu}`}}>
                 <div style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.title}</div>
                 {m.content && <div style={{fontSize:10,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.content}</div>}
@@ -410,6 +380,8 @@ const HomeTab = ({
       </div>
     );
   };
+
+
 
   const renderTasks = () => {
     const filtered = tasks.filter(t=>taskFilter==="all"?true:taskFilter==="active"?!t.done:t.done);
