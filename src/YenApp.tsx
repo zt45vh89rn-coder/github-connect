@@ -885,27 +885,16 @@ const HomeTab = ({
 
 
       {/* ── Header (sticky) ── */}
-      <div style={{padding:"14px 18px 0",background:C.bs,borderBottom:`1px solid ${C.bd}`,position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+      <div style={{padding:"14px 18px 12px",background:C.bs,borderBottom:`1px solid ${C.bd}`,position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
             <div style={{fontSize:15,fontWeight:800,color:C.t1}}>{uname||"Founder"}</div>
             <div style={{fontSize:11,color:C.t2,marginTop:2,fontFamily:M,fontWeight:700}}>{companyName||"stealth"}{genre?` · ${genre}`:""}</div>
           </div>
-          <div>{headerAction[sub]}</div>
-        </div>
-        <div style={{display:"flex",gap:0,overflowX:"auto",marginBottom:-1}}>
-          {SUBTABS.map(t=>(
-            <button key={t.id} onClick={()=>setSub(t.id)} style={{padding:"8px 10px",border:"none",background:"transparent",color:sub===t.id?C.ac:C.t3,fontSize:11,fontWeight:sub===t.id?700:400,cursor:"pointer",borderBottom:`2px solid ${sub===t.id?C.ac:"transparent"}`,whiteSpace:"nowrap",flexShrink:0}}>
-              {t.l}
-            </button>
-          ))}
         </div>
       </div>
 
-      {sub==="hub"      && renderHub()}
-      {sub==="cashflow" && renderCashflow()}
-      {sub==="memos"    && renderMemos()}
-      {sub==="invoice"  && renderInvoice()}
+      {renderHub()}
 
 
       <style>{`@keyframes yen_spin{to{transform:rotate(360deg)}}@keyframes yen_pulse{0%,100%{opacity:.3}50%{opacity:1}}`}</style>
