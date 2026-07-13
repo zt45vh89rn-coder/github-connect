@@ -330,8 +330,8 @@ const HomeTab = ({
           {[
             {l:"RUNWAY",   v:runwayLabel,             d:`残高 ${fmtK(Math.max(0,cashBalance))}`, c:runwayColor},
             {l:"REVENUE",  v:fmtK(totalRev),          d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
-            {l:"UNPAID",   v:fmtK(unpaidAmount),      d:`${unpaidCount} 請求 未回収`,            c:C.go},
-            {l:"REVENUE",  v:fmtK(totalRev),          d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
+            {l:"BURN",     v:fmtK(monthlyBurn),       d:`月次バーン`,                             c:C.re},
+            {l:"NET",      v:fmtK(totalRev-totalExp), d:`累計純利`,                               c:C.ac},
           ].map((k,i)=>(
             <div key={i} style={{...card,padding:"13px 14px"}}>
               <div style={{fontSize:9,color:C.t3,fontWeight:900,letterSpacing:1.5,fontFamily:M,marginBottom:6}}>{k.l}</div>
