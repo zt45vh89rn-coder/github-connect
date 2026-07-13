@@ -284,18 +284,8 @@ const HomeTab = ({
   };
 
 
-  const SUBTABS = [
-    {id:"hub",l:"ホーム"},
-    {id:"memos",l:"アイデア"},
-    {id:"cashflow",l:"キャッシュ"},
-    {id:"invoice",l:"請求"},
-  ];
-
-  const headerAction = {
-    invoice:  <Btn onClick={()=>{setIvf({company:"",amount:"",due:"",note:"",status:"未送付"});setInvModal("new");}}>+ インボイス</Btn>,
-    cashflow: <Btn onClick={()=>setCfModal(true)}>+ 追加</Btn>,
-    memos:    <Btn onClick={()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}}>+ アイデア</Btn>,
-  };
+  const SUBTABS = [];
+  const headerAction = {};
 
 
   // ──────── render functions (NOT components – avoids hook rule issues) ────────
