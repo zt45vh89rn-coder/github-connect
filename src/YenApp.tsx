@@ -1992,6 +1992,7 @@ const InvestPanel = () => {
 
 
 const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
+  const [mode, setMode] = useState("listings"); // listings | invest
   const [listings, setListings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [filter,   setFilter]   = useState("all");
