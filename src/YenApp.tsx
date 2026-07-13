@@ -331,7 +331,7 @@ const HomeTab = ({
             {l:"RUNWAY",   v:runwayLabel,             d:`残高 ${fmtK(Math.max(0,cashBalance))}`, c:runwayColor},
             {l:"REVENUE",  v:fmtK(totalRev),          d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
             {l:"UNPAID",   v:fmtK(unpaidAmount),      d:`${unpaidCount} 請求 未回収`,            c:C.go},
-            {l:"IDEAS",    v:`${ideaCount}`,          d:`アイデア在庫`,                          c:C.pu},
+            {l:"REVENUE",  v:fmtK(totalRev),          d:`純利 ${fmtK(totalRev-totalExp)}`,       c:C.gr},
           ].map((k,i)=>(
             <div key={i} style={{...card,padding:"13px 14px"}}>
               <div style={{fontSize:9,color:C.t3,fontWeight:900,letterSpacing:1.5,fontFamily:M,marginBottom:6}}>{k.l}</div>
@@ -340,33 +340,6 @@ const HomeTab = ({
             </div>
           ))}
         </div>
-
-        {/* Quick create */}
-        <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M}}>CREATE</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-          {[
-            {l:"アイデア",   c:C.pu, fn:()=>{setMf({title:"",content:"",tag:"アイデア"});setMemoModal("new");}},
-            {l:"資金繰り",   c:C.cy, fn:()=>setCfModal(true)},
-            {l:"請求",       c:C.go, fn:()=>{setIvf({company:"",amount:"",due:"",note:"",status:"未送付"});setInvModal("new");}},
-          ].map((a,i)=>(
-            <button key={i} onClick={a.fn} style={{...card,padding:"11px 8px",cursor:"pointer",fontSize:11,fontWeight:800,color:a.c,borderLeft:`3px solid ${a.c}`}}>
-              + {a.l}
-            </button>
-          ))}
-        </div>
-
-        {/* Ideas */}
-        {memos.length>0 && (
-          <>
-            <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M}}>IDEAS</div>
-            {memos.slice(0,5).map(m=>(
-              <div key={m.id} onClick={()=>{setMf({title:m.title,content:m.content,tag:m.tag});setMemoModal(m);}} style={{...card,padding:"11px 13px",marginBottom:7,cursor:"pointer",borderLeft:`3px solid ${C.pu}`}}>
-                <div style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.title}</div>
-                {m.content && <div style={{fontSize:10,color:C.t3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.content}</div>}
-              </div>
-            ))}
-          </>
-        )}
       </div>
     );
   };
