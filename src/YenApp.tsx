@@ -1799,6 +1799,198 @@ const ProfileTab = ({uname,setUname,companyName,setCompanyName,genre,setGenre,bi
 // ─────────────────────────────────────────
 const CATS = ["コンサルティング","プロフェッショナルサービス","SaaS / プロダクト","業務委託","リサーチ / 調査","その他"];
 
+// ─────────────────────────────────────────
+// INVESTMENT PANEL — fake stock market to grow YEN
+// ─────────────────────────────────────────
+const INVEST_ASSETS = [
+  {id:"NEXA", name:"NexaCloud",     sector:"SaaS",       base: 1200, vol:0.18, trend: 0.04},
+  {id:"HRZN", name:"Horizon Robotics",sector:"Robotics", base: 3400, vol:0.28, trend: 0.06},
+  {id:"KOMO", name:"Komorebi Bank", sector:"FinTech",    base:  850, vol:0.10, trend: 0.02},
+  {id:"AURA", name:"Aura Biotech",  sector:"BioTech",    base: 5200, vol:0.35, trend: 0.05},
+  {id:"MIKA", name:"Mikan Media",   sector:"Media",      base:  420, vol:0.22, trend: 0.03},
+  {id:"ZENO", name:"Zeno Logistics",sector:"Logistics",  base: 1800, vol:0.14, trend: 0.025},
+  {id:"YURI", name:"Yuri AI Labs",  sector:"AI",         base: 7600, vol:0.40, trend: 0.08},
+  {id:"SAKU", name:"Sakura Energy", sector:"Energy",     base: 2100, vol:0.16, trend: 0.03},
+];
+
+// deterministic pseudo-price based on time — 1 tick per 6 sec
+const priceOf = (a, t) => {
+  const tick = Math.floor(t / 6000);
+  const seed = a.id.split("").reduce((s,c)=>s+c.charCodeAt(0),0);
+  // multi-wave pseudo-random walk
+  const w1 = Math.sin((tick + seed*7) * 0.13) * a.vol;
+  const w2 = Math.sin((tick + seed*3) * 0.31) * a.vol * 0.6;
+  const w3 = Math.sin((tick + seed) * 0.71) * a.vol * 0.3;
+  const noise = ((Math.sin((tick*seed*17) % 997) + 1) / 2 - 0.5) * a.vol * 0.4;
+  const drift = 1 + a.trend * (tick / 1440); // small upward drift per ~day
+  const mult = drift * (1 + w1 + w2 + w3 + noise);
+  return Math.max(a.base * 0.15, Math.round(a.base * mult));
+};
+
+const InvestPanel = () => {
+  const [cash, setCash] = useLS("yen_invest_cash", 100000);
+  const [hold, setHold] = useLS("yen_invest_hold", {}); // {id:{shares,avg}}
+  const [now,  setNow]  = useState(Date.now());
+  const [pick, setPick] = useState(null);
+  const [qty,  setQty]  = useState("1");
+  const [msg,  setMsg]  = useState(null);
+
+  useEffect(()=>{
+    const t = setInterval(()=>setNow(Date.now()), 4000);
+    return ()=>clearInterval(t);
+  },[]);
+
+  const prices = INVEST_ASSETS.map(a=>({...a, price: priceOf(a, now), prev: priceOf(a, now-6000)}));
+  const portfolioValue = prices.reduce((s,a)=>{
+    const h = hold[a.id];
+    return h ? s + h.shares * a.price : s;
+  }, 0);
+  const totalCost = Object.entries(hold).reduce((s,[,h])=>s + h.shares*h.avg, 0);
+  const netGain = portfolioValue - totalCost;
+
+  const buy = () => {
+    if (!pick) return;
+    const q = Math.max(0, parseInt(qty)||0);
+    if (q<=0) { setMsg({ok:false,text:"数量を入力してください"}); return; }
+    const cost = pick.price * q;
+    if (cost > cash) { setMsg({ok:false,text:"現金が不足しています"}); return; }
+    const prev = hold[pick.id] || {shares:0, avg:0};
+    const newShares = prev.shares + q;
+    const newAvg = (prev.shares*prev.avg + cost) / newShares;
+    setHold({...hold, [pick.id]: {shares:newShares, avg:newAvg}});
+    setCash(cash - cost);
+    setMsg({ok:true,text:`${q}株 購入（${fmt(cost)} YEN）`});
+    setQty("1");
+  };
+  const sell = () => {
+    if (!pick) return;
+    const q = Math.max(0, parseInt(qty)||0);
+    const cur = hold[pick.id];
+    if (!cur || cur.shares<=0) { setMsg({ok:false,text:"保有していません"}); return; }
+    if (q<=0 || q>cur.shares) { setMsg({ok:false,text:`保有数以内で入力してください（${cur.shares}株）`}); return; }
+    const gain = pick.price * q;
+    const rest = cur.shares - q;
+    const next = {...hold};
+    if (rest<=0) delete next[pick.id]; else next[pick.id] = {shares:rest, avg:cur.avg};
+    setHold(next);
+    setCash(cash + gain);
+    setMsg({ok:true,text:`${q}株 売却（+${fmt(gain)} YEN）`});
+    setQty("1");
+  };
+  const reset = () => {
+    if (!confirm("投資ポートフォリオをリセットしますか？")) return;
+    setCash(100000); setHold({}); setPick(null); setMsg(null);
+  };
+
+  return (
+    <div style={{background:C.bg,minHeight:"100%",paddingBottom:80}}>
+      <div style={{background:"linear-gradient(135deg,#0F1E3D 0%,#2C3E68 50%,#3A5FA0 100%)",padding:"22px 18px 26px",color:"#fff",borderBottom:`1px solid ${C.bd}`}}>
+        <div style={{fontSize:10,fontWeight:700,letterSpacing:4,opacity:.75,marginBottom:6,fontFamily:M}}>INVEST MARKET</div>
+        <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:.2}}>YEN 投資マーケット</div>
+        <div style={{fontSize:11.5,opacity:.85,lineHeight:1.55}}>成長株・ベンチャーに投資してYENを増やそう。価格は市況で変動します。</div>
+        <div style={{display:"flex",gap:14,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,.15)"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:9,letterSpacing:2,opacity:.7,fontFamily:M}}>CASH</div>
+            <div style={{fontSize:16,fontWeight:800,fontFamily:M}}>{fmt(cash)}</div>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:9,letterSpacing:2,opacity:.7,fontFamily:M}}>PORTFOLIO</div>
+            <div style={{fontSize:16,fontWeight:800,fontFamily:M}}>{fmt(portfolioValue)}</div>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:9,letterSpacing:2,opacity:.7,fontFamily:M}}>NET P/L</div>
+            <div style={{fontSize:16,fontWeight:800,fontFamily:M,color:netGain>=0?"#7EE787":"#FF9DA1"}}>{netGain>=0?"+":""}{fmt(netGain)}</div>
+          </div>
+        </div>
+      </div>
+
+      {Object.keys(hold).length>0 && (
+        <div style={{padding:"14px 16px 4px"}}>
+          <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M}}>HOLDINGS</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {prices.filter(a=>hold[a.id]).map(a=>{
+              const h = hold[a.id];
+              const val = h.shares*a.price;
+              const pl = val - h.shares*h.avg;
+              const plPct = h.avg>0 ? (a.price/h.avg - 1)*100 : 0;
+              return (
+                <div key={a.id} onClick={()=>{setPick(a);setMsg(null);}} style={{...card,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,borderLeft:`3px solid ${pl>=0?C.gr:C.re}`}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:800,color:C.t1}}>{a.name} <span style={{fontSize:10,color:C.t3,fontFamily:M,fontWeight:700}}>· {a.id}</span></div>
+                    <div style={{fontSize:10,color:C.t3,fontWeight:600}}>{h.shares}株 · 平均 {fmt(Math.round(h.avg))}</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:13,fontWeight:800,color:C.t1,fontFamily:M}}>{fmt(val)}</div>
+                    <div style={{fontSize:10,fontWeight:800,color:pl>=0?C.gr:C.re,fontFamily:M}}>{pl>=0?"+":""}{fmt(pl)} ({plPct.toFixed(1)}%)</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{padding:"14px 16px 4px"}}>
+        <div style={{fontSize:10,color:C.t3,fontWeight:900,marginBottom:8,letterSpacing:1.5,fontFamily:M,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span>MARKET</span>
+          <button onClick={reset} style={{border:`1px solid ${C.bd}`,background:"#fff",color:C.t3,fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:4,cursor:"pointer",letterSpacing:1}}>RESET</button>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {prices.map(a=>{
+            const chg = a.prev>0 ? (a.price/a.prev - 1)*100 : 0;
+            const up = chg>=0;
+            return (
+              <div key={a.id} onClick={()=>{setPick(a);setMsg(null);setQty("1");}} style={{...card,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:42,height:42,borderRadius:6,background:`linear-gradient(135deg,${up?"#DCFCE7":"#FEE2E2"},${up?"#86EFAC":"#FCA5A5"})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:up?"#15803D":"#B91C1C",fontFamily:M,flexShrink:0,letterSpacing:.5}}>{a.id}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12.5,fontWeight:800,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                  <div style={{fontSize:10,color:C.t3,fontWeight:600}}>{a.sector}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:14,fontWeight:800,color:C.t1,fontFamily:M}}>{fmt(a.price)}</div>
+                  <div style={{fontSize:10,fontWeight:800,color:up?C.gr:C.re,fontFamily:M}}>{up?"▲":"▼"} {Math.abs(chg).toFixed(2)}%</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {pick && (
+        <div onClick={()=>{setPick(null);setMsg(null);}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:50,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",width:"100%",maxWidth:480,borderRadius:"16px 16px 0 0",padding:20,maxHeight:"85vh",overflowY:"auto"}}>
+            <div style={{fontSize:9.5,fontWeight:700,color:C.t3,letterSpacing:2,marginBottom:4,fontFamily:M}}>{pick.id} · {pick.sector}</div>
+            <div style={{fontSize:20,fontWeight:800,color:C.t1,marginBottom:6}}>{pick.name}</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.bd}`}}>
+              <div style={{fontSize:24,fontWeight:800,color:C.t1,fontFamily:M}}>{fmt(priceOf(pick, now))}</div>
+              <div style={{fontSize:11,color:C.t3,fontFamily:M,fontWeight:600}}>YEN / 株</div>
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <div style={{flex:1,padding:"10px 12px",borderRadius:8,background:C.b2,border:`1px solid ${C.bd}`}}>
+                <div style={{fontSize:9.5,color:C.t3,fontWeight:700,letterSpacing:1.5,fontFamily:M,marginBottom:2}}>CASH</div>
+                <div style={{fontSize:13,fontWeight:800,color:C.t1,fontFamily:M}}>{fmt(cash)}</div>
+              </div>
+              <div style={{flex:1,padding:"10px 12px",borderRadius:8,background:C.b2,border:`1px solid ${C.bd}`}}>
+                <div style={{fontSize:9.5,color:C.t3,fontWeight:700,letterSpacing:1.5,fontFamily:M,marginBottom:2}}>HOLDING</div>
+                <div style={{fontSize:13,fontWeight:800,color:C.t1,fontFamily:M}}>{hold[pick.id]?.shares || 0} 株</div>
+              </div>
+            </div>
+            <label style={{fontSize:10.5,fontWeight:700,color:C.t2,marginBottom:5,display:"block",letterSpacing:.5}}>数量</label>
+            <input type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)} style={{...iSt,marginBottom:12}}/>
+            {msg && <div style={{fontSize:12,padding:"8px 10px",borderRadius:8,marginBottom:10,background:msg.ok?C.gD:C.rD,color:msg.ok?C.gr:C.re,fontWeight:700}}>{msg.text}</div>}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={sell} style={{flex:1,padding:"12px",borderRadius:6,border:`1px solid ${C.re}40`,background:C.rD,color:C.re,fontSize:12.5,fontWeight:800,cursor:"pointer",letterSpacing:1}}>売る</button>
+              <button onClick={buy} style={{flex:1,padding:"12px",borderRadius:6,border:"none",background:C.gr,color:"#fff",fontSize:12.5,fontWeight:800,cursor:"pointer",letterSpacing:1}}>買う</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+
 const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
   const [listings, setListings] = useState([]);
   const [loading,  setLoading]  = useState(true);
