@@ -2072,8 +2072,25 @@ const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
 
   const chipSt = (a) => ({padding:"6px 12px",borderRadius:999,fontSize:11,fontWeight:600,cursor:"pointer",border:`1px solid ${a?C.ac:C.bd}`,background:a?C.ac:"#fff",color:a?"#fff":C.t2,whiteSpace:"nowrap"});
 
+  const modeSwitch = (
+    <div style={{display:"flex",gap:6,padding:"12px 16px 4px",background:C.bg}}>
+      <button onClick={()=>setMode("listings")} style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${mode==="listings"?C.t1:C.bd}`,background:mode==="listings"?C.t1:"#fff",color:mode==="listings"?"#fff":C.t2,fontSize:12,fontWeight:800,cursor:"pointer",letterSpacing:.5}}>サービス案件</button>
+      <button onClick={()=>setMode("invest")} style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${mode==="invest"?"#10B981":C.bd}`,background:mode==="invest"?"#10B981":"#fff",color:mode==="invest"?"#fff":C.t2,fontSize:12,fontWeight:800,cursor:"pointer",letterSpacing:.5}}>投資マーケット</button>
+    </div>
+  );
+
+  if (mode === "invest") {
+    return (
+      <div style={{background:C.bg,minHeight:"100%"}}>
+        {modeSwitch}
+        <InvestPanel/>
+      </div>
+    );
+  }
+
   return (
     <div style={{background:C.bg,minHeight:"100%",paddingBottom:80}}>
+      {modeSwitch}
       <div style={{background:"linear-gradient(135deg,#0F1E3D 0%,#1E3A6E 60%,#2C5282 100%)",padding:"22px 18px 26px",color:"#fff",borderBottom:`1px solid ${C.bd}`}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:4,opacity:.75,marginBottom:6,fontFamily:M}}>BUSINESS DIRECTORY</div>
         <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:.2}}>事業 ＆ サービス ショーケース</div>
