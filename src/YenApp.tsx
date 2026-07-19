@@ -1992,7 +1992,6 @@ const InvestPanel = () => {
 
 
 const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
-  const [mode, setMode] = useState("listings"); // listings | invest
   const [listings, setListings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [filter,   setFilter]   = useState("all");
@@ -2072,25 +2071,8 @@ const MarketTab = ({uname, currentUserId, balance=0, reloadWallet}) => {
 
   const chipSt = (a) => ({padding:"6px 12px",borderRadius:999,fontSize:11,fontWeight:600,cursor:"pointer",border:`1px solid ${a?C.ac:C.bd}`,background:a?C.ac:"#fff",color:a?"#fff":C.t2,whiteSpace:"nowrap"});
 
-  const modeSwitch = (
-    <div style={{display:"flex",gap:6,padding:"12px 16px 4px",background:C.bg}}>
-      <button onClick={()=>setMode("listings")} style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${mode==="listings"?C.t1:C.bd}`,background:mode==="listings"?C.t1:"#fff",color:mode==="listings"?"#fff":C.t2,fontSize:12,fontWeight:800,cursor:"pointer",letterSpacing:.5}}>サービス案件</button>
-      <button onClick={()=>setMode("invest")} style={{flex:1,padding:"10px",borderRadius:8,border:`1.5px solid ${mode==="invest"?"#10B981":C.bd}`,background:mode==="invest"?"#10B981":"#fff",color:mode==="invest"?"#fff":C.t2,fontSize:12,fontWeight:800,cursor:"pointer",letterSpacing:.5}}>投資マーケット</button>
-    </div>
-  );
-
-  if (mode === "invest") {
-    return (
-      <div style={{background:C.bg,minHeight:"100%"}}>
-        {modeSwitch}
-        <InvestPanel/>
-      </div>
-    );
-  }
-
   return (
     <div style={{background:C.bg,minHeight:"100%",paddingBottom:80}}>
-      {modeSwitch}
       <div style={{background:"linear-gradient(135deg,#0F1E3D 0%,#1E3A6E 60%,#2C5282 100%)",padding:"22px 18px 26px",color:"#fff",borderBottom:`1px solid ${C.bd}`}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:4,opacity:.75,marginBottom:6,fontFamily:M}}>BUSINESS DIRECTORY</div>
         <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:.2}}>事業 ＆ サービス ショーケース</div>
@@ -2538,9 +2520,10 @@ export default function App() {
     {id:"home",   l:"ダッシュ", emoji:"🏠", icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill={a?"#3B82F6":"none"} stroke={a?"#3B82F6":C.t3} strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>},
     {id:"startup", l:"ビジネス", emoji:"🚀", icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?"#8B5CF6":C.t3} strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>},
     {id:"market",  l:"マーケット", emoji:"🛍", icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill={a?"#10B981":"none"} stroke={a?"#10B981":C.t3} strokeWidth="2"><path d="M3 9h18l-2 11H5z"/><path d="M8 9V5a4 4 0 0 1 8 0v4"/></svg>},
+    {id:"invest",  l:"投資", emoji:"📈", icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={a?"#06B6D4":C.t3} strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>},
     {id:"profile", l:"マイページ", emoji:"👤", icon:(a)=><svg width="20" height="20" viewBox="0 0 24 24" fill={a?"#F59E0B":"none"} stroke={a?"#F59E0B":C.t3} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
   ];
-  const tabColors = {home:"#3B82F6",startup:"#8B5CF6",market:"#10B981",profile:"#F59E0B"};
+  const tabColors = {home:"#3B82F6",startup:"#8B5CF6",market:"#10B981",invest:"#06B6D4",profile:"#F59E0B"};
 
   return(
     <div style={{minHeight:"100vh",height:"100dvh",background:C.bg,display:"flex",flexDirection:"column",fontFamily:F,maxWidth:480,margin:"0 auto",overflow:"hidden",position:"relative"}}>
@@ -2571,6 +2554,7 @@ export default function App() {
         {tab==="home"      && <HomeTab {...homeProps}/>}
         {tab==="startup"    && <StartupTab ventures={ventures} setVentures={setVentures} tasks={tasks} setTasks={setTasks} finances={finances} setFinances={setFinances} deals={deals} setDeals={setDeals} okrs={okrs} setOkrs={setOkrs} gigs={gigs} setGigs={setGigs} gigOrders={gigOrders} setGigOrders={setGigOrders}/>}
         {tab==="market"    && <MarketTab uname={uname} currentUserId={USER_ID} balance={balance} reloadWallet={loadWallet}/>}
+        {tab==="invest"    && <InvestPanel/>}
         {tab==="profile"   && <ProfileTab uname={uname} setUname={setUname} companyName={companyName} setCompanyName={setCompanyName} genre={genre} setGenre={setGenre} bizDesc={bizDesc} setBizDesc={setBizDesc} founded={founded} setFounded={setFounded} instagram={instagram} setInstagram={setInstagram} twitter={twitter} setTwitter={setTwitter} youtube={youtube} setYoutube={setYoutube} monthlyGoal={monthlyGoal} setMonthlyGoal={setMonthlyGoal} setLoggedIn={handleLogout} balance={balance}/>}
       </div>
 
